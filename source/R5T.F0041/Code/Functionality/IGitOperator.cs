@@ -26,17 +26,9 @@ namespace R5T.F0041
 				repositoryOwnerName,
 				repositoryName);
 
-			var ownerDirectoryName = Instances.DirectoryNameOperator.GetRepositoryOwnerDirectoryName(repositoryOwnerName);
-
-			var localOwnerRepositoryDirectoryPath = Instances.PathOperator.GetDirectoryPath(
-				Instances.DirectoryPaths.GitHubRepositoriesDirectory,
-				ownerDirectoryName);
-
-			var repositoryDirectoryName = Instances.DirectoryNameOperator.GetRepositoryDirectoryName(repositoryName);
-
-			var localRepositoryDirectoryPath = Instances.PathOperator.GetDirectoryPath(
-				localOwnerRepositoryDirectoryPath,
-				repositoryDirectoryName);
+			var localRepositoryDirectoryPath = Instances.DirectoryPathOperator.GetLocalRepositoryDirectoryPath(
+				repositoryName,
+				repositoryOwnerName);
 
 			var authentication = await Instances.GitHubOperator.GetGitHubAuthentication();
 

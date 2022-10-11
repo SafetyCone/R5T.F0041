@@ -15,7 +15,7 @@ namespace R5T.F0041
 	[FunctionalityMarker]
 	public partial interface IGitHubOperator : IFunctionalityMarker
 	{
-        public async Task<long> CreateRepository_NonIdempotent(GitHubRepositorySpecification repositorySpecification)
+        public async Task<Repository> CreateRepository_NonIdempotent(GitHubRepositorySpecification repositorySpecification)
         {
             var autoInit = repositorySpecification.InitializeWithReadMe;
 
@@ -45,23 +45,23 @@ namespace R5T.F0041
             // Wait a few seconds for the repository to be fully created on GitHub's side. This allows any following operations that request the repository to succeed.
             await Task.Delay(3000);
 
-            return createdRepository.Id;
+            return createdRepository;
         }
 
-        public async Task<long> CreateRepository(GitHubRepositorySpecification repositorySpecification)
+        public async Task<Repository> CreateRepository(GitHubRepositorySpecification repositorySpecification)
         {
             var repositoryExists = await this.RepositoryExists(
                 repositorySpecification.Organization,
                 repositorySpecification.Name);
 
-            var repositoryID = repositoryExists
-                ? await this.GetRepositoryID(
+            var repository = repositoryExists
+                ? await this.GetRepository(
                     repositorySpecification.Organization,
                     repositorySpecification.Name)
-                : await this.CreateRepository_NonIdempotent(repositorySpecification);
-            ;
+                : await this.CreateRepository_NonIdempotent(repositorySpecification)
+                ;
 
-            return repositoryID;
+            return repository;
         }
 
         public async Task DeleteRepository_NonIdempotent(string owner, string name)
@@ -146,11 +146,53 @@ namespace R5T.F0041
             return gitHubClient;
         }
 
+        public async Task<Repository> GetRepository(
+            long repositoryID)
+        {
+            var gitHubClient = await this.GetGitHubClient();
+
+            var repository = await this.GetRepository(
+                gitHubClient,
+                repositoryID);
+
+            return repository;
+        }
+
+        public Task<Repository> GetRepository(
+            Authentication gitHubAuthentication,
+            long repositoryID)
+        {
+            var gitHubClient = this.GetGitHubClient(gitHubAuthentication);
+
+            return this.GetRepository(
+                gitHubClient,
+                repositoryID);
+        }
+
+        public Task<Repository> GetRepository(GitHubClient gitHubClient,
+            long repositoryID)
+        {
+            return gitHubClient.Repository.Get(repositoryID);
+        }
+
         public Task<Repository> GetRepository(GitHubClient gitHubClient,
             string owner,
             string name)
         {
             return gitHubClient.Repository.Get(owner, name);
+        }
+
+        public async Task<Repository> GetRepository(
+            string owner,
+            string name)
+        {
+            var gitHubClient = await this.GetGitHubClient();
+
+            var repository = await gitHubClient.Repository.Get(
+                owner,
+                name);
+
+            return repository;
         }
 
         public async Task<long> GetRepositoryID(string owner, string name)
@@ -168,6 +210,45 @@ namespace R5T.F0041
             var output = await this.GetFromRepository(owner, name,
                 repository => Task.FromResult(repository.CloneUrl));
 
+            return output;
+        }
+
+        public async Task<string> GetHtmlUrl(string owner, string name)
+        {
+            var output = await this.GetFromRepository(owner, name,
+                repository => Task.FromResult(repository.HtmlUrl));
+
+            return output;
+        }
+
+        public async Task<string> GetHtmlUrl(
+            long repositoryID)
+        {
+            var output = await this.InRepositoryContext(
+                repositoryID,
+                repository => Task.FromResult(repository.HtmlUrl));
+
+            return output;
+        }
+
+        /// <summary>
+        /// Example: https://api.github.com/repos/SafetyCone/Test123.Private
+        /// </summary>
+        public async Task<string> GetUrl(string owner, string name)
+        {
+            var output = await this.GetFromRepository(owner, name,
+                repository => Task.FromResult(repository.Url));
+
+            return output;
+        }
+
+        public async Task<TOutput> InRepositoryContext<TOutput>(
+            long repositoryID,
+            Func<Repository, Task<TOutput>> repositoryFunction)
+        {
+            var repository = await this.GetRepository(repositoryID);
+
+            var output = await repositoryFunction(repository);
             return output;
         }
 
@@ -203,7 +284,7 @@ namespace R5T.F0041
         /// Stages, commits, and pushes all changes in a local directory path using the given commit message.
         /// </summary>
         /// <returns>True if any unpushed changes were pushed (there were any changes to push), false if not (there were no unpushed changes to push).</returns>
-        public bool PushAllChanges_NoResult(
+        public bool PushAllChanges(
             string repositoryLocalDirectoryPath,
             string commitMessage,
             ILogger logger)
