@@ -205,6 +205,9 @@ namespace R5T.F0041
             return output;
         }
 
+        /// <summary>
+        /// Query GitHub to find the clone URL of a repository.
+        /// </summary>
         public async Task<string> GetCloneUrl(string owner, string name)
         {
             var output = await this.GetFromRepository(owner, name,

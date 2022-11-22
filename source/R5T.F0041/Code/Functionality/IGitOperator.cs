@@ -11,14 +11,16 @@ namespace R5T.F0041
 	public partial interface IGitOperator : IFunctionalityMarker,
 		F0019.IGitOperator
 	{
+		/// <inheritdoc cref="Clone_NonIdempotent(string, string)"/>
 		public Task<string> Clone_NonIdempotent(string repositoryName)
 		{
 			return this.Clone_NonIdempotent(
 				repositoryName,
 				Instances.GitHubOwners.SafetyCone);
-		}
+        }
 
-		public async Task<string> Clone_NonIdempotent(
+        /// <inheritdoc cref = "F0019.IGitOperator.Clone_NonIdempotent(string, string, T0144.Authentication)" />
+        public async Task<string> Clone_NonIdempotent(
 			string repositoryName,
 			string repositoryOwnerName)
 		{
