@@ -71,13 +71,18 @@ namespace R5T.F0041
             await gitHubClient.Repository.Delete(owner, name);
         }
 
-        public async Task DeleteRepository(string owner, string name)
+        public async Task DeleteRepository_Idempotent(string owner, string name)
         {
             var repositoryExists = await this.RepositoryExists(owner, name);
             if (repositoryExists)
             {
                 await this.DeleteRepository_NonIdempotent(owner, name);
             }
+        }
+
+        public async Task DeleteRepository(string owner, string name)
+        {
+            await this.DeleteRepository_Idempotent(owner, name);
         }
 
         public async Task<T> GetFromRepository<T>(

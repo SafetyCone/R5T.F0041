@@ -19,6 +19,18 @@ namespace R5T.F0041
 				Instances.GitHubOwners.SafetyCone);
         }
 
+		public async Task Clone_NonIdempotent_Simple(
+			string remoteRepositoryUrl,
+			string localRepositoryDirectoryPath)
+		{
+            var authentication = await Instances.GitHubOperator.GetGitHubAuthentication();
+
+            this.Clone_NonIdempotent(
+                remoteRepositoryUrl,
+                localRepositoryDirectoryPath,
+                authentication);
+        }
+
         /// <inheritdoc cref = "F0019.IGitOperator.Clone_NonIdempotent(string, string, T0144.Authentication)" />
         public async Task<string> Clone_NonIdempotent(
 			string repositoryName,
@@ -34,7 +46,7 @@ namespace R5T.F0041
 
 			var authentication = await Instances.GitHubOperator.GetGitHubAuthentication();
 
-			var _ = this.Clone_NonIdempotent(
+			this.Clone_NonIdempotent(
 				cloneUrl,
 				localRepositoryDirectoryPath,
 				authentication);
