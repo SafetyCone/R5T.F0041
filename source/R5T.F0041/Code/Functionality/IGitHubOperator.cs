@@ -341,6 +341,16 @@ namespace R5T.F0041
             return hasUnpushedChanges;
         }
 
+        public Task<bool> RepositoryExists(string gitHubRepositoryUrl)
+        {
+            var tokens = gitHubRepositoryUrl.Split('/');
+
+            var name = tokens[^1];
+            var owner = tokens[^2];
+
+            return this.RepositoryExists(owner, name);
+        }
+
         public async Task<bool> RepositoryExists(string owner, string name)
         {
             var output = await this.InClientContext(async gitHubClient =>
