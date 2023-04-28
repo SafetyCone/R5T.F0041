@@ -80,6 +80,9 @@ namespace R5T.F0041
             }
         }
 
+        /// <summary>
+        /// Chooses <see cref="DeleteRepository_Idempotent(string, string)"/> as the default.
+        /// </summary>
         public async Task DeleteRepository(string owner, string name)
         {
             await this.DeleteRepository_Idempotent(owner, name);
