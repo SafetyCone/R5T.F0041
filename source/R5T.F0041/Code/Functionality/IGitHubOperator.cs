@@ -48,6 +48,25 @@ namespace R5T.F0041
             return createdRepository;
         }
 
+        public Task<Repository> Create_Repository(
+            string repositoryName,
+            string repositoryOrganizationName,
+            string repositoryDescription)
+        {
+            var repositorySpecification = new GitHubRepositorySpecification
+            {
+                Description = repositoryDescription,
+                InitializeWithReadMe = true,
+                License = GitHubRepositoryLicense.MIT,
+                Name = repositoryName,
+                Organization = repositoryOrganizationName,
+                Visibility = GitHubRepositoryVisibility.Public,
+            };
+
+            return this.CreateRepository(
+                repositorySpecification);
+        }
+
         public async Task<Repository> CreateRepository(GitHubRepositorySpecification repositorySpecification)
         {
             var repositoryExists = await this.RepositoryExists(
@@ -152,6 +171,15 @@ namespace R5T.F0041
             };
 
             return gitHubClient;
+        }
+
+        public Task<Repository> Get_Repository(string repositoryUrl)
+        {
+            var identifier = Instances.GitHubRepositoryUrlOperator.Get_Identifier(repositoryUrl);
+
+            return this.GetRepository(
+                identifier.OwnerName,
+                identifier.RepositoryName);
         }
 
         public async Task<Repository> GetRepository(
@@ -271,6 +299,15 @@ namespace R5T.F0041
             return output;
         }
 
+        public Task<bool> Is_Private(string repositoryUrl)
+        {
+            var identifier = Instances.GitHubRepositoryUrlOperator.Get_Identifier(repositoryUrl);
+
+            return this.IsPrivate(
+                identifier.OwnerName,
+                identifier.RepositoryName);
+        }
+
         public async Task<bool> IsPrivate(string owner, string name)
         {
             var isPrivate = await this.GetFromRepository(owner, name,
@@ -291,67 +328,25 @@ namespace R5T.F0041
                 name);
         }
 
-        /// <summary>
-        /// Stages, commits, and pushes all changes in a local directory path using the given commit message.
-        /// </summary>
-        /// <returns>True if any unpushed changes were pushed (there were any changes to push), false if not (there were no unpushed changes to push).</returns>
+        /// <inheritdoc cref="IGitOperator.PushAllChanges(string, string, ILogger)"/>
         public bool PushAllChanges(
             string repositoryLocalDirectoryPath,
             string commitMessage,
             ILogger logger)
         {
-            logger.LogInformation($"Pushing all changes...\n\t{repositoryLocalDirectoryPath}");
-
-            logger.LogInformation($"Checking whether repository has any unpushed changes...\n\t{repositoryLocalDirectoryPath}");
-
-            var hasUnpushedChanges = Instances.GitOperator.HasUnpushedLocalChanges(repositoryLocalDirectoryPath);
-
-            logger.LogInformation($"Checked whether repository has any unpushed changes.\n\t{repositoryLocalDirectoryPath}");
-
-            if (hasUnpushedChanges)
-            {
-                logger.LogInformation("Unpushed changes detected.");
-
-                // Stage all unstaged paths.
-                logger.LogInformation("Staging changes...");
-
-                var unstagedPathsCount = Instances.GitOperator.StageAllUnstagedPaths(repositoryLocalDirectoryPath);
-
-                logger.LogInformation($"Staged changes. (Unstaged paths count: {unstagedPathsCount})");
-
-                // Commit changes with commit message.
-                logger.LogInformation("Committing changes...");
-
-                Instances.GitOperator.Commit(
-                    repositoryLocalDirectoryPath,
-                    commitMessage);
-
-                logger.LogInformation("Committed changes.");
-
-                // Push changes to GitHub.
-                logger.LogInformation("Pushing changes...");
-
-                Instances.GitOperator.Push(repositoryLocalDirectoryPath);
-
-                logger.LogInformation("Pushed changes...");
-            }
-            else
-            {
-                logger.LogInformation("No unpushed changes detected. No need to push changes.");
-            }
-
-            // Return whether any changes were pushed.
-            return hasUnpushedChanges;
+            return Instances.GitOperator.PushAllChanges(
+                repositoryLocalDirectoryPath,
+                commitMessage,
+                logger);
         }
 
         public Task<bool> RepositoryExists(string gitHubRepositoryUrl)
         {
-            var tokens = gitHubRepositoryUrl.Split('/');
+            var identitifier = Instances.GitHubRepositoryUrlOperator.Get_Identifier(gitHubRepositoryUrl);
 
-            var name = tokens[^1];
-            var owner = tokens[^2];
-
-            return this.RepositoryExists(owner, name);
+            return this.RepositoryExists(
+                identitifier.OwnerName,
+                identitifier.RepositoryName);
         }
 
         public async Task<bool> RepositoryExists(string owner, string name)

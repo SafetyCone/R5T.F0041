@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+using R5T.F0057;
 using R5T.T0046;
 using R5T.T0132;
 
@@ -75,7 +79,61 @@ namespace R5T.F0041
 			return author;
 		}
 
-		public void Push(string localRepositoryDirectoryPath)
+		public void In_CommitContext(
+			string repositoryLocalDirectoryPath,
+			string commitMessage,
+			ILogger logger,
+			IEnumerable<Action> actions = default)
+		{
+			Instances.ActionOperator.Run(actions);
+
+			this.PushAllChanges(
+				repositoryLocalDirectoryPath,
+				commitMessage,
+				logger);
+		}
+
+        public void In_CommitContext(
+            string repositoryLocalDirectoryPath,
+            string commitMessage,
+            ILogger logger,
+            params Action[] actions)
+		{
+			this.In_CommitContext(
+				repositoryLocalDirectoryPath,
+				commitMessage,
+				logger,
+				actions.AsEnumerable());
+		}
+
+        public async Task In_CommitContext(
+            string repositoryLocalDirectoryPath,
+            string commitMessage,
+            ILogger logger,
+            IEnumerable<Func<Task>> actions = default)
+        {
+            await Instances.ActionOperator.Run(actions);
+
+            this.PushAllChanges(
+                repositoryLocalDirectoryPath,
+                commitMessage,
+                logger);
+        }
+
+        public Task In_CommitContext(
+            string repositoryLocalDirectoryPath,
+            string commitMessage,
+            ILogger logger,
+            params Func<Task>[] actions)
+        {
+            return this.In_CommitContext(
+                repositoryLocalDirectoryPath,
+                commitMessage,
+                logger,
+                actions.AsEnumerable());
+        }
+
+        public void Push(string localRepositoryDirectoryPath)
 		{
 			var authentication = Instances.GitHubOperator.GetGitHubAuthentication_Synchronous();
 
@@ -83,5 +141,58 @@ namespace R5T.F0041
 				localRepositoryDirectoryPath,
 				authentication);
 		}
-	}
+
+        /// <summary>
+        /// Stages, commits, and pushes all changes in a local directory path using the given commit message.
+        /// </summary>
+        /// <returns>True if any unpushed changes were pushed (there were any changes to push), false if not (there were no unpushed changes to push).</returns>
+        public bool PushAllChanges(
+            string repositoryLocalDirectoryPath,
+            string commitMessage,
+            ILogger logger)
+        {
+            logger.LogInformation($"Pushing all changes...\n\t{repositoryLocalDirectoryPath}");
+
+            logger.LogInformation($"Checking whether repository has any unpushed changes...\n\t{repositoryLocalDirectoryPath}");
+
+            var hasUnpushedChanges = Instances.GitOperator.HasUnpushedLocalChanges(repositoryLocalDirectoryPath);
+
+            logger.LogInformation($"Checked whether repository has any unpushed changes.\n\t{repositoryLocalDirectoryPath}");
+
+            if (hasUnpushedChanges)
+            {
+                logger.LogInformation("Unpushed changes detected.");
+
+                // Stage all unstaged paths.
+                logger.LogInformation("Staging changes...");
+
+                var unstagedPathsCount = Instances.GitOperator.StageAllUnstagedPaths(repositoryLocalDirectoryPath);
+
+                logger.LogInformation($"Staged changes. (Unstaged paths count: {unstagedPathsCount})");
+
+                // Commit changes with commit message.
+                logger.LogInformation("Committing changes...");
+
+                Instances.GitOperator.Commit(
+                    repositoryLocalDirectoryPath,
+                    commitMessage);
+
+                logger.LogInformation("Committed changes.");
+
+                // Push changes to GitHub.
+                logger.LogInformation("Pushing changes...");
+
+                Instances.GitOperator.Push(repositoryLocalDirectoryPath);
+
+                logger.LogInformation("Pushed changes...");
+            }
+            else
+            {
+                logger.LogInformation("No unpushed changes detected. No need to push changes.");
+            }
+
+            // Return whether any changes were pushed.
+            return hasUnpushedChanges;
+        }
+    }
 }
