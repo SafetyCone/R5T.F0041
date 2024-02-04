@@ -4,16 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
-using R5T.F0057;
+
 using R5T.T0046;
 using R5T.T0132;
+using R5T.T0144;
 
 
 namespace R5T.F0041
 {
 	[FunctionalityMarker]
 	public partial interface IGitOperator : IFunctionalityMarker,
-		F0019.IGitOperator
+        L0083.F001.IGitOperator
 	{
 		/// <inheritdoc cref="Clone_NonIdempotent(string, string)"/>
 		public Task<string> Clone_NonIdempotent(string repositoryName)
@@ -35,7 +36,21 @@ namespace R5T.F0041
                 authentication);
         }
 
-        /// <inheritdoc cref = "F0019.IGitOperator.Clone_NonIdempotent(string, string, T0144.Authentication)" />
+        /// <inheritdoc cref = "L0083.F001.IGitOperator.Clone_NonIdempotent(string, string, string, string)" />
+        public string Clone_NonIdempotent(
+            string cloneUrl,
+            string localRepositoryDirectoryPath,
+            Authentication authentication)
+        {
+            var output = this.Clone_NonIdempotent(
+                cloneUrl,
+                localRepositoryDirectoryPath,
+                authentication.Username,
+                authentication.Password);
+
+            return output;
+        }
+        
         public async Task<string> Clone_NonIdempotent(
 			string repositoryName,
 			string repositoryOwnerName)
@@ -58,7 +73,19 @@ namespace R5T.F0041
 			return localRepositoryDirectoryPath;
 		}
 
-		public void Commit(
+        public void Commit(
+            string localRepositoryDirectoryPath,
+            string commitMessage,
+            Author author)
+        {
+            this.Commit(
+                localRepositoryDirectoryPath,
+                commitMessage,
+                author.Name,
+                author.EmailAddress);
+        }
+
+        public void Commit(
 			string localRepositoryDirectoryPath,
 			string commitMessage)
 		{
@@ -133,13 +160,27 @@ namespace R5T.F0041
                 actions.AsEnumerable());
         }
 
-        public void Push(string localRepositoryDirectoryPath)
+        public bool Push(
+            string localRepositoryDirectoryPath,
+            Authentication authentication)
+        {
+            var output = this.Push(
+                localRepositoryDirectoryPath,
+                authentication.Username,
+                authentication.Password);
+
+            return output;
+        }
+
+        public bool Push(string localRepositoryDirectoryPath)
 		{
 			var authentication = Instances.GitHubOperator.GetGitHubAuthentication_Synchronous();
 
-			this.Push(
+			var output = this.Push(
 				localRepositoryDirectoryPath,
 				authentication);
+
+            return output;
 		}
 
         /// <summary>
@@ -151,13 +192,13 @@ namespace R5T.F0041
             string commitMessage,
             ILogger logger)
         {
-            logger.LogInformation($"Pushing all changes...\n\t{repositoryLocalDirectoryPath}");
+            logger.LogInformation("Pushing all changes...\n\t{RepositoryLocalDirectoryPath}", repositoryLocalDirectoryPath);
 
-            logger.LogInformation($"Checking whether repository has any unpushed changes...\n\t{repositoryLocalDirectoryPath}");
+            logger.LogInformation("Checking whether repository has any unpushed changes...\n\t{RepositoryLocalDirectoryPath}", repositoryLocalDirectoryPath);
 
-            var hasUnpushedChanges = Instances.GitOperator.HasUnpushedLocalChanges(repositoryLocalDirectoryPath);
+            var hasUnpushedChanges = Instances.GitOperator.Has_UnpushedChanges(repositoryLocalDirectoryPath);
 
-            logger.LogInformation($"Checked whether repository has any unpushed changes.\n\t{repositoryLocalDirectoryPath}");
+            logger.LogInformation("Checked whether repository has any unpushed changes.\n\t{RepositoryLocalDirectoryPath}", repositoryLocalDirectoryPath);
 
             if (hasUnpushedChanges)
             {
@@ -166,9 +207,9 @@ namespace R5T.F0041
                 // Stage all unstaged paths.
                 logger.LogInformation("Staging changes...");
 
-                var unstagedPathsCount = Instances.GitOperator.StageAllUnstagedPaths(repositoryLocalDirectoryPath);
+                var unstagedPathsCount = Instances.GitOperator.Stage_UnstagedPaths(repositoryLocalDirectoryPath);
 
-                logger.LogInformation($"Staged changes. (Unstaged paths count: {unstagedPathsCount})");
+                logger.LogInformation("Staged changes. (Unstaged paths count: {UnstagedPathsCount})", unstagedPathsCount);
 
                 // Commit changes with commit message.
                 logger.LogInformation("Committing changes...");
