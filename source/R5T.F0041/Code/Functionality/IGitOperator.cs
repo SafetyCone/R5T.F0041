@@ -166,8 +166,7 @@ namespace R5T.F0041
         {
             var output = this.Push(
                 localRepositoryDirectoryPath,
-                authentication.Username,
-                authentication.Password);
+                authentication);
 
             return output;
         }
