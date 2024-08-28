@@ -164,9 +164,10 @@ namespace R5T.F0041
             string localRepositoryDirectoryPath,
             Authentication authentication)
         {
-            var output = this.Push(
+            var output = this.Push_WithoutStageAndCommit(
                 localRepositoryDirectoryPath,
-                authentication);
+                authentication.Username,
+                authentication.Password);
 
             return output;
         }
