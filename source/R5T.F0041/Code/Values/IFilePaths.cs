@@ -1,14 +1,20 @@
 using System;
 
 using R5T.T0131;
+using R5T.T0143;
 
 
 namespace R5T.F0041
 {
 	[ValuesMarker]
-	public partial interface IFilePaths : IValuesMarker
+	public partial interface IFilePaths : IValuesMarker,
+		Z0069.IFilePaths
 	{
-		public string GitHubAuthenticationFile_Json => @"C:\Users\David\Dropbox\Organizations\Rivet\Shared\Data\Secrets\Authentication-GitHub-Aalborg.json";
-		public string GitHubAuthorFile_Json => @"C:\Users\David\Dropbox\Organizations\Rivet\Shared\Data\Secrets\GitHub-Author-David.json";
+#pragma warning disable IDE1006 // Naming Styles
+
+		[Ignore]
+        Z0069.IFilePaths _Z0069 => Z0069.FilePaths.Instance;
+
+#pragma warning restore IDE1006 // Naming Styles
 	}
 }

@@ -99,8 +99,10 @@ namespace R5T.F0041
 
 		public Author GetAuthor()
 		{
-			var author = Instances.JsonOperator.LoadFromFile_Synchronous<Author>(
-				Instances.FilePaths.GitHubAuthorFile_Json,
+            var filePath = Instances.FilePaths.GitHubAuthorFile_Json;
+
+            var author = Instances.JsonOperator.LoadFromFile_Synchronous<Author>(
+				filePath,
 				"GitHubAuthor");
 
 			return author;
